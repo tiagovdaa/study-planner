@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Planner</title>
+</head>
+<body>
+    <h1>Study Planner</h1>
+
+    <p>Welcome to the Study Planner! This tool helps you organize your study sessions by allowing you to divide your available study time across multiple courses based on your preferred effort allocation.</p>
+    
+    <h3>Instructions:</h3>
+    <p>
+        1. Upload a CSV file that contains the courses or books you'd like to study.<br>
+        2. Allocate effort percentages for each course.<br>
+        3. Set your availability for each day (e.g., Monday from 6pm to 9pm).<br>
+        4. Choose the output file format (Google Calendar, iCalendar, or PDF).<br>
+        5. The tool will generate a calendar file based on your inputs, which you can import into your calendar app or open in a spreadsheet.
+    </p>
+
+    <h3>CSV File Format Example:</h3>
+    <p>Your CSV file should contain the following columns:</p>
+    <pre>
+name,type,duration_hours,total_pages
+Python Programming,course,10,
+Data Science Basics,course,8,
+Learning Python,book,,300
+Artificial Intelligence,book,,500
+    </pre>
+    <p>
+        - **name**: The name of the course or book.<br>
+        - **type**: The type of material (course or book).<br>
+        - **duration_hours**: For courses, specify the total duration in hours.<br>
+        - **total_pages**: For books, specify the total number of pages.
+    </p>
+
+    <form id="csvForm" enctype="multipart/form-data" method="POST" action="/">
+        <label for="file">Choose CSV file:</label>
+        <input type="file" name="file" id="file" required><br><br>
+
+        <button type="button" onclick="loadCsv()">Load Courses</button>
+        <br><br>
+
+        <div id="effortAllocation" style="display:none;">
+            <!-- Effort Percentage Allocation -->
+            <h2>Allocate Effort for Each Course (in %)</h2>
+            <div id="courses_effort"></div>
+
+            <h2>Set Availability Time for Each Day</h2>
+
+            <!-- Monday -->
+            <div>
+                <input type="checkbox" id="monday" name="days[]" value="monday">
+                <label for="monday">Monday</label><br>
+                Available from: <input type="time" name="monday_start" value="18:00"> 
+                to: <input type="time" name="monday_end" value="22:00"><br><br>
+            </div>
+
+            <!-- Tuesday -->
+            <div>
+                <input type="checkbox" id="tuesday" name="days[]" value="tuesday">
+                <label for="tuesday">Tuesday</label><br>
+                Available from: <input type="time" name="tuesday_start" value="08:00"> 
+                to: <input type="time" name="tuesday_end" value="10:00"><br><br>
+            </div>
+
+            <!-- Wednesday -->
+            <div>
+                <input type="checkbox" id="wednesday" name="days[]" value="wednesday">
+                <label for="wednesday">Wednesday</label><br>
+                Available from: <input type="time" name="wednesday_start" value="18:00"> 
+                to: <input type="time" name="wednesday_end" value="22:00"><br><br>
+            </div>
+
+            <!-- Thursday -->
+            <div>
+                <input type="checkbox" id="thursday" name="days[]" value="thursday">
+                <label for="thursday">Thursday</label><br>
+                Available from: <input type="time" name="thursday_start" value="18:00"> 
+                to: <input type="time" name="thursday_end" value="22:00"><br><br>
+            </div>
+
+            <!-- Friday -->
+            <div>
+                <input type="checkbox" id="friday" name="days[]" value="friday">
+                <label for="friday">Friday</label><br>
+                Available from: <input type="time" name="friday_start" value="18:00"> 
+                to: <input type="time" name="friday_end" value="22:00"><br><br>
+            </div>
+
+            <!-- Saturday -->
+            <div>
+                <input type="checkbox" id="saturday" name="days[]" value="saturday">
+                <label for="saturday">Saturday</label><br>
+                Available from: <input type="time" name="saturday_start" value="18:00"> 
+                to: <input type="time" name="saturday_end" value="22:00"><br><br>
+            </div>
+
+            <!-- Sunday -->
+            <div>
+                <input type="checkbox" id="sunday" name="days[]" value="sunday">
+                <label for="sunday">Sunday</label><br>
+                Available from: <input type="time" name="sunday_start" value="18:00"> 
+                to: <input type="time" name="sunday_end" value="22:00"><br><br>
+            </div>
+
+            <h2>Select File Type</h2>
+            <label for="fileType">Choose file format:</label>
+            <select name="fileType" id="fileType">
+                <option value="ics">Calendar (.ics)</option>
+                <option value="csv">CSV File (.csv)</option>
+                <option value="pdf">PDF (.pdf)</option>
+            </select><br><br>
+
+            <input type="submit" value="Generate Calendar">
+        </div>
+    </form>
+
+    <script>
+        function loadCsv() {
+            const fileInput = document.getElementById('file');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/load-csv', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.courses.length > 0) {
+                    document.getElementById('effortAllocation').style.display = 'block';
+                    const coursesEffortDiv = document.getElementById('courses_effort');
+                    coursesEffortDiv.innerHTML = '';  // Clear existing content
+
+                    // Populate effort input for each course
+                    data.courses.forEach(course => {
+                        const courseDiv = document.createElement('div');
+
+                        const label = document.createElement('label');
+                        label.textContent = `${course.name}: `;
+
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.name = `${course.name}_effort`;
+                        input.placeholder = 'Enter percentage';
+                        input.min = '0';
+                        input.max = '100';
+
+                        courseDiv.appendChild(label);
+                        courseDiv.appendChild(input);
+                        coursesEffortDiv.appendChild(courseDiv);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading CSV:', error);
+            });
+        }
+    </script>
+</body>
+</html>
