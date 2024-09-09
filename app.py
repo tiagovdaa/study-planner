@@ -207,13 +207,38 @@ def generate_pdf_schedule(schedule):
 
     # Add table rows with schedule details, wrapping text if it exceeds the cell width
     pdf.set_font("Arial", "", 10)
+
+    # Iterate through the schedule and calculate the maximum height needed for each row
     for time, days in schedule.items():
         row_data = [days[day] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]]
         if any(row_data):  # Only include rows that have at least one subject
-            pdf.cell(30, 10, txt=time, border=1)
-            for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
-                pdf.multi_cell(35, 10, txt=days[day], border=1, align="C")
-            pdf.ln()
+
+            # Calculate the maximum number of lines needed for wrapping text in each day column
+            max_lines = 1
+            for text in row_data:
+                lines = pdf.get_string_width(text) // 35 + 1  # Rough estimate of how many lines this text will wrap into
+                max_lines = max(max_lines, lines)
+
+            # Print the "Time" cell, adjusted for the maximum number of lines
+            pdf.cell(30, 10 * max_lines, txt=time, border=1)
+
+            # Print the "Day" cells, wrapping text if necessary
+            x_start = pdf.get_x()
+            y_start = pdf.get_y()
+
+            for text in row_data:
+                # Save the position for each day
+                x = pdf.get_x()
+                y = pdf.get_y()
+
+                # Draw the cell with multi-line support
+                pdf.multi_cell(35, 10, txt=text, border=1, align="C")
+
+                # Move back to the original X position (next column)
+                pdf.set_xy(x + 35, y_start)
+
+            # Move to the next line after all columns are drawn
+            pdf.ln(10 * max_lines)
 
     file_path = 'study_schedule.pdf'
     pdf.output(file_path)
