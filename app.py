@@ -42,14 +42,11 @@ def get_next_weekday(date, weekday):
 
 def organize_by_time_and_day(events):
     schedule = {}
-    # Initialize the schedule dictionary with time slots for each day of the week
-    for hour in range(24):  # For every hour of the day
-        time_str = f"{hour:02}:00"
-        schedule[time_str] = {day: "" for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
-
-    # Populate the schedule with subjects based on events, rounding times down to the nearest hour
+    # Only create slots for the times that have events
     for event in events:
         start_time_str = event['start'].strftime("%H:00")  # Round down to the nearest hour
+        if start_time_str not in schedule:
+            schedule[start_time_str] = {day: "" for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
         schedule[start_time_str][event['day']] = event['course']
 
     return schedule
@@ -184,10 +181,11 @@ def generate_calendar_csv(schedule):
         # Add header row with weekdays
         writer.writerow(["Time", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
         
-        # Write each time slot and the courses for each day
+        # Write each time slot that has subjects and the courses for each day
         for time, days in schedule.items():
             row = [time] + [days[day] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]]
-            writer.writerow(row)
+            if any(row[1:]):  # Only include rows that have at least one subject
+                writer.writerow(row)
     
     return file_path
 
@@ -197,20 +195,22 @@ def generate_pdf_schedule(schedule):
     pdf.set_font("Arial", "B", 12)
     pdf.cell(200, 10, txt="Study Schedule", ln=True, align="C")
 
-    # Add table headers
+    # Add table headers with wider columns for text
     pdf.set_font("Arial", "B", 10)
     pdf.cell(30, 10, txt="Time", border=1, align="C")
     for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
-        pdf.cell(25, 10, txt=day, border=1, align="C")
+        pdf.cell(35, 10, txt=day, border=1, align="C")
     pdf.ln()
 
-    # Add table rows with schedule details
+    # Add table rows with schedule details, only including hours that have subjects
     pdf.set_font("Arial", "", 10)
     for time, days in schedule.items():
-        pdf.cell(30, 10, txt=time, border=1)
-        for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
-            pdf.cell(25, 10, txt=days[day], border=1, align="C")
-        pdf.ln()
+        row_data = [days[day] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]]
+        if any(row_data):  # Only include rows that have at least one subject
+            pdf.cell(30, 10, txt=time, border=1)
+            for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
+                pdf.cell(35, 10, txt=days[day], border=1, align="C")
+            pdf.ln()
 
     file_path = 'study_schedule.pdf'
     pdf.output(file_path)
