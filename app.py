@@ -36,7 +36,7 @@ def get_next_weekday(date, weekday):
     Return the next occurrence of the given weekday (0=Monday, 6=Sunday) from a given date.
     """
     days_ahead = weekday - date.weekday()
-    if days_ahead <= 0:  # Target day already happened this week, move to the next week
+    if days_ahead < 0 or (days_ahead == 0 and date.time() > datetime.now().time()):  # Handle starting today if within available time
         days_ahead += 7
     return date + timedelta(days_ahead)
 
@@ -105,8 +105,11 @@ def index():
                 start_time = datetime.strptime(start_time_str, "%H:%M").time()
                 end_time = datetime.strptime(end_time_str, "%H:%M").time()
 
-                # Get the next occurrence of the selected day
-                study_day = get_next_weekday(current_date, days_of_week[day])
+                # Get the next occurrence of the selected day (allow starting from today if within the available time range)
+                if datetime.now().time() < start_time and days_of_week[day] == current_date.weekday():
+                    study_day = current_date
+                else:
+                    study_day = get_next_weekday(current_date, days_of_week[day])
 
                 # Combine date with the time for start and end times
                 start_datetime = datetime.combine(study_day, start_time)
@@ -202,14 +205,14 @@ def generate_pdf_schedule(schedule):
         pdf.cell(35, 10, txt=day, border=1, align="C")
     pdf.ln()
 
-    # Add table rows with schedule details, only including hours that have subjects
+    # Add table rows with schedule details, wrapping text if it exceeds the cell width
     pdf.set_font("Arial", "", 10)
     for time, days in schedule.items():
         row_data = [days[day] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]]
         if any(row_data):  # Only include rows that have at least one subject
             pdf.cell(30, 10, txt=time, border=1)
             for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
-                pdf.cell(35, 10, txt=days[day], border=1, align="C")
+                pdf.multi_cell(35, 10, txt=days[day], border=1, align="C")
             pdf.ln()
 
     file_path = 'study_schedule.pdf'
