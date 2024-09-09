@@ -193,10 +193,11 @@ def generate_calendar_csv(schedule):
     return file_path
 
 def generate_pdf_schedule(schedule):
-    pdf = FPDF()
+    # Create the PDF object with landscape orientation ('L')
+    pdf = FPDF(orientation='L', unit='mm', format='A4')  # A4 size, landscape
     pdf.add_page()
     pdf.set_font("Arial", "B", 12)
-    pdf.cell(200, 10, txt="Study Schedule", ln=True, align="C")
+    pdf.cell(275, 10, txt="Study Schedule", ln=True, align="C")  # Adjusted width to fit landscape
 
     # Add table headers with wider columns for text
     pdf.set_font("Arial", "B", 10)
